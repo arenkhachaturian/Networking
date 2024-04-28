@@ -1,18 +1,25 @@
-cmake_minimum_required(VERSION 3.0)
-project(TestServer)
+cmake_minimum_required(VERSION 3.10)
+project(MyProject)
 
-# Set the source files directory
-set(SOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+# Set C standard
+set(CMAKE_C_STANDARD 11)
 
-# Add all source files in the src directory to a variable
-file(GLOB SOURCES ${SOURCES_DIR}/*.c)
+# Function to find all source files recursively
+function(find_sources dir)
+    file(GLOB_RECURSE _sources CONFIGURE_DEPENDS "${dir}/*.c")
+    file(GLOB_RECURSE _headers CONFIGURE_DEPENDS "${dir}/*.h")
+    set(${dir}_sources ${_sources} PARENT_SCOPE)
+    set(${dir}_headers ${_headers} PARENT_SCOPE)
+endfunction()
 
-# Add the library target
-add_library(ServerLibrary STATIC ${SOURCES})
+include_directories(src/Client src/Server)
 
-# Set include directories
-target_include_directories(ServerLibrary PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+# Find sources for src directory
+find_sources("src")
 
-# Add executable and link it with the library
-add_executable(TestServer TestServer.c)
-target_link_libraries(TestServer PRIVATE ServerLibrary)
+# Add library for src files
+add_library(ServerLibrary STATIC ${src_sources})
+
+# Add server executable
+add_executable(server TestServer.c)
+target_link_libraries(server ServerLibrary)
