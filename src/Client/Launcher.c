@@ -1,9 +1,16 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include "Launcher.h"
+#include <pthread.h>
+#include "Server.h"
 
+#define MAX_CLIENTS 10
 #define BUFFER_SIZE 3000
 
-void handle_connection(int client_socket) {
+void *handle_connection(void *arg) {
+    int client_socket = *((int *)arg);
+    free(arg);
+
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read, bytes_written;
 
@@ -24,6 +31,7 @@ void handle_connection(int client_socket) {
     }
 
     close(client_socket);
+    pthread_exit(NULL);
 }
 
 void launch(struct Server *server) {
@@ -33,12 +41,28 @@ void launch(struct Server *server) {
         struct sockaddr_in client_addr;
         socklen_t client_addr_len = sizeof(client_addr);
         int client_socket = accept(server->socket, (struct sockaddr *)&client_addr, &client_addr_len);
-
         if (client_socket < 0) {
-            perror("Error accepting connection");
+            perror("Error accepting connection\n");
             continue;
         }
 
-        handle_connection(client_socket);
+        pthread_t tid;
+        int *client_socket_ptr = (int *)malloc(sizeof(int));
+        if (client_socket_ptr == NULL) {
+            perror("Error allocating memory\n");
+            close(client_socket);
+            continue;
+        }
+        *client_socket_ptr = client_socket;
+
+        if (pthread_create(&tid, NULL, handle_connection, (void *)client_socket_ptr) != 0) {
+            perror("Error creating thread\n");
+            close(client_socket);
+            free(client_socket_ptr);
+            continue;
+        }
+
+        // Detach the thread
+        pthread_detach(tid);
     }
 }
