@@ -1,44 +1,44 @@
+#include <unistd.h>
 #include "Launcher.h"
 
-void launch(struct Server* server) {
-  printf("Server listening on %s:%d\n", inet_ntoa(server->address.sin_addr), ntohs(server->address.sin_port));
-  printf("===== Waiting to connect ====\n");
-  while(1) {
-    int buffer_sz = 3000;
-    char buffer[buffer_sz];
-    struct sockaddr* addr = (struct sockaddr*) &(server->address);
-    socklen_t addr_length = sizeof(server->address);
-    int new_socket = accept(server->socket, addr, &addr_length);
-    if (new_socket < 0) {
-      perror("Error accepting connection");
-      return;
+#define BUFFER_SIZE 3000
+
+void handle_connection(int client_socket) {
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_read, bytes_written;
+
+    printf("Connection accepted. Reading data...\n");
+
+    while ((bytes_read = read(client_socket, buffer, BUFFER_SIZE)) > 0) {
+        bytes_written = write(client_socket, buffer, bytes_read);
+        if (bytes_written == -1) {
+            perror("Error writing to socket");
+            break;
+        }
     }
-    printf("Client connected\n");
+
+    if (bytes_read == 0) {
+        printf("Client disconnected.\n");
+    } else if (bytes_read == -1) {
+        perror("Error reading from socket");
+    }
+
+    close(client_socket);
+}
+
+void launch(struct Server *server) {
+    printf("Waiting for connections...\n");
 
     while (1) {
-      ssize_t bytes_read = read(new_socket, buffer, buffer_sz);
-      if (bytes_read <= 0) {
-        if (bytes_read == 0) {
-          printf("Client disconnected\n");
-        } else {
-          perror("Error while reading from socket");
-        }
-        close(new_socket);
-        break;
-      }
+        struct sockaddr_in client_addr;
+        socklen_t client_addr_len = sizeof(client_addr);
+        int client_socket = accept(server->socket, (struct sockaddr *)&client_addr, &client_addr_len);
 
-      // Check if the received data contains the closing character
-      int i;
-      for (i = 0; i < bytes_read; i++) {
-        if (buffer[i] == CLOSING_CHAR) {
-          printf("Client sent closing character '@'. Disconnecting.\n");
-          close(new_socket);
-        } else if (buffer[i] == '\0') { // Handle escape character
-          printf("Escape character detected. Ignoring.\n");
-        } else {
-          ssize_t bytes_written = write(new_socket, &buffer[i], sizeof(buffer[i]));
+        if (client_socket < 0) {
+            perror("Error accepting connection");
+            continue;
         }
-      }
+
+        handle_connection(client_socket);
     }
-  }
 }
