@@ -2,20 +2,74 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
 #include "Server.h"
 
 #define MAX_CLIENTS 10
 #define BUFFER_SIZE 3000
+#define USER_NAME_SZ 32
+#define PASSWORD_SZ 32
 
-void *handle_connection(void *arg) {
+struct Credentials {
+  char username[USER_NAME_SZ];
+  char passowrd[PASSWORD_SZ];
+};
+
+int auth_user(struct Credentials* creds) {
+    char buffer[1000];
+    if  (creds == NULL)
+        return -1;
+    
+    printf("Hello, guys!\n");
+
+    FILE* userDBfile = fopen("users.csv", "r");
+    if (userDBfile == NULL) {
+        exit(-1);
+    }
+    printf("We opened file\n");
+
+    fgets(buffer, sizeof(buffer), userDBfile);
+    printf("I read some data\n");
+    printf("%s\n", buffer);
+    return 1;
+}
+
+int get_credentials(struct Credentials* creds, int client_socket) {
+    char username[USER_NAME_SZ];
+    char password[PASSWORD_SZ];
+    const char promptUserName[] = "Please enter your username: ";
+    int bytes_written = write(client_socket, promptUserName, sizeof(promptUserName));
+    
+    int bytes_read = read(client_socket, username, USER_NAME_SZ);
+    if (bytes_read > 0) {
+      username[bytes_read-2] = '\0';
+      printf("bytes read in username: %d\n", bytes_read);
+      strcpy(creds->username, username);
+    }
+
+    const char promptPassword[] = "Please enter your username: ";
+    bytes_written = write(client_socket, promptPassword, sizeof(promptPassword));
+    bytes_read = read(client_socket, password, PASSWORD_SZ);
+    if (bytes_read > 0) {
+      password[bytes_read-2] = '\0';
+      printf("bytes read in password: %d\n", bytes_read);
+      strcpy(creds->passowrd, password);
+    }
+
+    printf("User entered with username %s and password %s\n", creds->username, creds->passowrd);
+    fflush(stdout);
+}
+
+void* handle_connection(void *arg) {
     int client_socket = *((int *)arg);
     free(arg);
 
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read, bytes_written;
 
-    printf("Connection accepted. Reading data...\n");
-
+    printf("Connection accepted. Starting session...\n");
+    struct Credentials *ptr_credentials = (struct Credentials *)malloc(sizeof(struct Credentials));
+    get_credentials(ptr_credentials, client_socket);
     while ((bytes_read = read(client_socket, buffer, BUFFER_SIZE)) > 0) {
         bytes_written = write(client_socket, buffer, bytes_read);
         if (bytes_written == -1) {
