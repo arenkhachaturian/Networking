@@ -1,0 +1,4 @@
+name,password
+aren,goodPswd
+karen,badPswd
+lucas,goodguy14!

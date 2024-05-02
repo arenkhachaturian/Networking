@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include <string.h>
 #include "Server.h"
+#include "DBReader.h"
+
 
 #define MAX_CLIENTS 10
 #define BUFFER_SIZE 3000
@@ -56,8 +58,6 @@ int get_credentials(struct Credentials* creds, int client_socket) {
       strcpy(creds->passowrd, password);
     }
 
-    printf("User entered with username %s and password %s\n", creds->username, creds->passowrd);
-    fflush(stdout);
 }
 
 void* handle_connection(void *arg) {
@@ -70,6 +70,16 @@ void* handle_connection(void *arg) {
     printf("Connection accepted. Starting session...\n");
     struct Credentials *ptr_credentials = (struct Credentials *)malloc(sizeof(struct Credentials));
     get_credentials(ptr_credentials, client_socket);
+    int verification_result = verify_user(ptr_credentials->username, ptr_credentials->passowrd);
+    if (verification_result == 0) {
+      printf("Hi dear %s!\n", ptr_credentials->username);
+      fflush(stdout);
+    } else if (verification_result > 0) {
+      printf("You are not welcomed anymore %s!\n", ptr_credentials->username);
+      fflush(stdout);
+      close(client_socket);
+      pthread_exit(NULL);
+    }
     while ((bytes_read = read(client_socket, buffer, BUFFER_SIZE)) > 0) {
         bytes_written = write(client_socket, buffer, bytes_read);
         if (bytes_written == -1) {

@@ -12,7 +12,7 @@ function(find_sources dir)
     set(${dir}_headers ${_headers} PARENT_SCOPE)
 endfunction()
 
-include_directories(src/Client src/Server)
+include_directories(src/Client src/Server src/DBReader)
 
 # Find sources for src directory
 find_sources("src")
