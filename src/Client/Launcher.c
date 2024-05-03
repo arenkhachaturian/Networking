@@ -5,6 +5,7 @@
 #include <string.h>
 #include "Server.h"
 #include "DBReader.h"
+#include "Utils.h"
 
 
 #define MAX_CLIENTS 10
@@ -45,7 +46,7 @@ int get_credentials(struct Credentials* creds, int client_socket) {
     int bytes_read = read(client_socket, username, USER_NAME_SZ);
     if (bytes_read > 0) {
       username[bytes_read-2] = '\0';
-      printf("bytes read in username: %d\n", bytes_read);
+      ntwrk_println("bytes read in username: %d", bytes_read);
       strcpy(creds->username, username);
     }
 
@@ -54,10 +55,9 @@ int get_credentials(struct Credentials* creds, int client_socket) {
     bytes_read = read(client_socket, password, PASSWORD_SZ);
     if (bytes_read > 0) {
       password[bytes_read-2] = '\0';
-      printf("bytes read in password: %d\n", bytes_read);
+      ntwrk_println("bytes read in password: %d", bytes_read);
       strcpy(creds->passowrd, password);
     }
-
 }
 
 void* handle_connection(void *arg) {
@@ -67,16 +67,14 @@ void* handle_connection(void *arg) {
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read, bytes_written;
 
-    printf("Connection accepted. Starting session...\n");
+    ntwrk_println("Connection accepted. Starting session...");
     struct Credentials *ptr_credentials = (struct Credentials *)malloc(sizeof(struct Credentials));
     get_credentials(ptr_credentials, client_socket);
     int verification_result = verify_user(ptr_credentials->username, ptr_credentials->passowrd);
     if (verification_result == 0) {
-      printf("Hi dear %s!\n", ptr_credentials->username);
-      fflush(stdout);
+      ntwrk_println("Hi dear %s!", ptr_credentials->username);
     } else if (verification_result > 0) {
-      printf("You are not welcomed anymore %s!\n", ptr_credentials->username);
-      fflush(stdout);
+      ntwrk_println("You are not welcomed anymore %s!", ptr_credentials->username);
       close(client_socket);
       pthread_exit(NULL);
     }
@@ -89,7 +87,7 @@ void* handle_connection(void *arg) {
     }
 
     if (bytes_read == 0) {
-        printf("Client disconnected.\n");
+        ntwrk_println("Client disconnected.");
     } else if (bytes_read == -1) {
         perror("Error reading from socket");
     }
@@ -99,7 +97,7 @@ void* handle_connection(void *arg) {
 }
 
 void launch(struct Server *server) {
-    printf("Waiting for connections...\n");
+    ntwrk_println("Waiting for connections...");
 
     while (1) {
         struct sockaddr_in client_addr;
