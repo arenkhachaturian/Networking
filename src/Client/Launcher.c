@@ -18,25 +18,6 @@ struct Credentials {
   char passowrd[PASSWORD_SZ];
 };
 
-int auth_user(struct Credentials* creds) {
-    char buffer[1000];
-    if  (creds == NULL)
-        return -1;
-    
-    printf("Hello, guys!\n");
-
-    FILE* userDBfile = fopen("users.csv", "r");
-    if (userDBfile == NULL) {
-        exit(-1);
-    }
-    printf("We opened file\n");
-
-    fgets(buffer, sizeof(buffer), userDBfile);
-    printf("I read some data\n");
-    printf("%s\n", buffer);
-    return 1;
-}
-
 int get_credentials(struct Credentials* creds, int client_socket) {
     char username[USER_NAME_SZ];
     char password[PASSWORD_SZ];
