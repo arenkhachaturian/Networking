@@ -18,6 +18,86 @@ struct Credentials {
   char passowrd[PASSWORD_SZ];
 };
 
+
+enum ConnectionState
+{
+  MENU,
+  OPTION_1, // temporary placeholder. real functionality should be implemented later
+  OPTION_2,
+  EXIT
+};
+
+int handle_state(int client_socket)
+{
+  int bytes_read = 0;
+  int bytes_written = 0;
+  int intputBufferSize = 32;
+  char inputBuffer[intputBufferSize];
+  enum ConnectionState state = MENU;
+  while (state != EXIT)
+  {
+    switch (state)
+    {
+    case MENU:
+      bytes_written = write(client_socket, "MENU:\n1. Option 1\n2. Option 2\n3. Exit\nEnter your choice: ", strlen("MENU:\n1. Option 1\n2. Option 2\n3. Exit\nEnter your choice: "));
+      if (bytes_written == -1)
+      {
+        perror("Error writing to socket");
+        break;
+      }
+      bytes_read = read(client_socket, inputBuffer, intputBufferSize);
+      if (bytes_read > 0)
+      {
+        inputBuffer[bytes_read - 1] = '\0';
+        int choice = atoi(inputBuffer);
+        switch (choice)
+        {
+        case 1:
+          state = OPTION_1;
+          break;
+        case 2:
+          state = OPTION_2;
+          break;
+        case 3:
+          state = EXIT;
+          break;
+        default:
+          bytes_written = write(client_socket, "Invalid choice. Please try again.\n", strlen("Invalid choice. Please try again.\n"));
+          if (bytes_written == -1)
+          {
+            perror("Error writing to socket");
+          }
+          break;
+        }
+      }
+      break;
+    case OPTION_1:
+      bytes_written = write(client_socket, "You chose Option 1.\n", strlen("You chose Option 1.\n"));
+      if (bytes_written == -1)
+      {
+        perror("Error writing to socket");
+      }
+      state = MENU;
+      break;
+    case OPTION_2:
+      bytes_written = write(client_socket, "You chose Option 2.\n", strlen("You chose Option 2.\n"));
+      if (bytes_written == -1)
+      {
+        perror("Error writing to socket");
+      }
+      state = MENU;
+      break;
+    case EXIT:
+      bytes_written = write(client_socket, "Exiting...\n", strlen("Exiting...\n"));
+      if (bytes_written == -1)
+      {
+        perror("Error writing to socket");
+      }
+      break;
+    }
+  }
+}
+
 int get_credentials(struct Credentials* creds, int client_socket) {
     char username[USER_NAME_SZ];
     char password[PASSWORD_SZ];
@@ -59,19 +139,7 @@ void* handle_connection(void *arg) {
       close(client_socket);
       pthread_exit(NULL);
     }
-    while ((bytes_read = read(client_socket, buffer, BUFFER_SIZE)) > 0) {
-        bytes_written = write(client_socket, buffer, bytes_read);
-        if (bytes_written == -1) {
-            perror("Error writing to socket");
-            break;
-        }
-    }
-
-    if (bytes_read == 0) {
-        ntwrk_println("Client disconnected.");
-    } else if (bytes_read == -1) {
-        perror("Error reading from socket");
-    }
+    handle_state(client_socket);
 
     close(client_socket);
     pthread_exit(NULL);
