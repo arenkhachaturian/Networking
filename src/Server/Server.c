@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct Server server_constructor(int domain, int service, int protocol, 
-                                unsigned interface, int port,
-                                int backlog, void (*launch)(struct Server*)) {
+struct Server server_constructor(int domain, int service, int protocol,
+  unsigned interface, int port,
+  int backlog, void (*launch)(struct Server*)) {
   struct Server server;
 
   server.domain = domain;
@@ -24,8 +24,8 @@ struct Server server_constructor(int domain, int service, int protocol,
     perror("Failed to connect socket...\n");
     exit(1);
   }
-  
-  if (0 > bind(server.socket, 
+
+  if (0 > bind(server.socket,
                 (struct sockaddr*) &server.address, 
                 sizeof(server.address))
   ) {
