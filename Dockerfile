@@ -21,6 +21,8 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1
 # Copy the source code into the container
 COPY . /app
 
+ENV USER_DATA_FILE /app/data/users.txt
+
 # Build your project using CMake
 RUN cd build && cmake .. && cmake --build .
 

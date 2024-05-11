@@ -107,16 +107,14 @@ int get_credentials(struct Credentials* creds, int client_socket) {
   int bytes_read = read(client_socket, username, USER_NAME_SZ);
   if (bytes_read > 0) {
     username[bytes_read - 2] = '\0';
-    ntwrk_println("bytes read in username: %d", bytes_read);
     strcpy(creds->username, username);
   }
 
-  const char promptPassword[] = "Please enter your username: ";
+  const char promptPassword[] = "Please enter your password: ";
   bytes_written = write(client_socket, promptPassword, sizeof(promptPassword));
   bytes_read = read(client_socket, password, PASSWORD_SZ);
   if (bytes_read > 0) {
     password[bytes_read - 2] = '\0';
-    ntwrk_println("bytes read in password: %d", bytes_read);
     strcpy(creds->passowrd, password);
   }
 }
@@ -137,6 +135,10 @@ void* handle_connection(void* arg) {
   }
   else if (verification_result > 0) {
     ntwrk_println("You are not welcomed anymore %s!", ptr_credentials->username);
+    close(client_socket);
+    pthread_exit(NULL);
+  } else {
+    ntwrk_println("Error while reading dbg");
     close(client_socket);
     pthread_exit(NULL);
   }
