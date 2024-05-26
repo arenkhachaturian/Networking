@@ -20,7 +20,7 @@ sudo docker build -t <your_image_name> .
 
 To run image in a docker container:
 ```bash
-sudo docker run -it -p 8080:8080 <your_image_name>
+runDocker.sh <your_image_name>
 ```
 
 
