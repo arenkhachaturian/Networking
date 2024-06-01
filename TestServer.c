@@ -14,8 +14,8 @@ int main(void) {
   int port_num = atoi(port);
   printf("port number is: %d\n", port_num);
 
-  struct Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port_num, 10, launch);
+  struct Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port_num, 10 /*backlog*/, launch);
   server.launch(&server);
 
-  return 0;
+  return EXIT_SUCCESS;
 }
