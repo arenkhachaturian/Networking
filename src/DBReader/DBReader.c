@@ -16,22 +16,22 @@ int verify_user(char* username, char* passowrd) {
   users_file = fopen(users_file_name, "r");
 
   if (users_file == NULL) {
-    ntwrk_println("Error opening file %s\n", users_file_name);
+    ntwrk_println("Error opening file %s", users_file_name);
     return -1;
   }
 
   while (fgets(buffer, sizeof(buffer), users_file) != NULL) {
     char* tmp_username = strtok(buffer, ",");
     if (strncmp(tmp_username, username, sizeof(username)) == 0) {
-      ntwrk_println("User %s is found\n", username);
+      ntwrk_println("User %s is found", username);
       char* tmp_password = strtok(NULL, ",");
       if (strncmp(tmp_password, passowrd, sizeof(passowrd)) == 0) {
-        ntwrk_println("User %s entered with password %s \n", username, passowrd);
+        ntwrk_println("User %s entered with password %s", username, passowrd);
         return 0;
       }
     }
   }
 
-  ntwrk_println("User %s not found\n", username);
+  ntwrk_println("User %s not found", username);
   return 1;
 }

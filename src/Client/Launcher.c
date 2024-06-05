@@ -19,7 +19,7 @@ struct Credentials {
 };
 
 
-enum ConnectionState
+enum MenuOption
 {
   MENU,
   OPTION_1, // temporary placeholder. real functionality should be implemented later
@@ -27,72 +27,70 @@ enum ConnectionState
   EXIT
 };
 
+int handle_menu(enum MenuOption* choice) {
+  switch (*choice)
+  {
+  case 1:
+    *choice = OPTION_1;
+    break;
+  case 2:
+    *choice = OPTION_2;
+    break;
+  case 3:
+    *choice = EXIT;
+    break;
+  default:
+    *choice = MENU;
+    return -1;
+  }
+  return 0;
+}
+
+
+int readChoice(int client_socket, enum MenuOption* state) {
+  int intputBufferSize = 32;
+  char inputBuffer[intputBufferSize];
+  int bytes_read = read(client_socket, inputBuffer, intputBufferSize);
+ 
+  if (bytes_read > 0) 
+  {
+    inputBuffer[bytes_read - 1] = '\0';
+    *state = (enum MenuOption)atoi(inputBuffer);
+    return 0;
+  }
+
+  return -1;
+}
+
+
 int handle_state(int client_socket)
 {
   int bytes_read = 0;
   int bytes_written = 0;
-  int intputBufferSize = 32;
-  char inputBuffer[intputBufferSize];
-  enum ConnectionState state = MENU;
+  
+  enum MenuOption state = MENU;
   while (state != EXIT)
   {
     switch (state)
     {
     case MENU:
-      bytes_written = write(client_socket, "MENU:\n1. Option 1\n2. Option 2\n3. Exit\nEnter your choice: ", strlen("MENU:\n1. Option 1\n2. Option 2\n3. Exit\nEnter your choice: "));
-      if (bytes_written == -1)
+      bytes_written = ntwrk_write(client_socket, "MENU:\n1. Option 1\n2. Option 2\n3. Exit\nEnter your choice: ");
+      readChoice(client_socket, &state);
+      if (handle_menu(&state) < 0)
       {
-        perror("Error writing to socket");
-        break;
-      }
-      bytes_read = read(client_socket, inputBuffer, intputBufferSize);
-      if (bytes_read > 0)
-      {
-        inputBuffer[bytes_read - 1] = '\0';
-        int choice = atoi(inputBuffer);
-        switch (choice)
-        {
-        case 1:
-          state = OPTION_1;
-          break;
-        case 2:
-          state = OPTION_2;
-          break;
-        case 3:
-          state = EXIT;
-          break;
-        default:
-          bytes_written = write(client_socket, "Invalid choice. Please try again.\n", strlen("Invalid choice. Please try again.\n"));
-          if (bytes_written == -1)
-          {
-            perror("Error writing to socket");
-          }
-          break;
-        }
-      }
+        int bytes_written = ntwrk_write(client_socket, "Invalid choice. Please try again.\n");
+      }   
       break;
     case OPTION_1:
-      bytes_written = write(client_socket, "You chose Option 1.\n", strlen("You chose Option 1.\n"));
-      if (bytes_written == -1)
-      {
-        perror("Error writing to socket");
-      }
+      bytes_written = ntwrk_write(client_socket, "You chose Option 1.\n");
       state = MENU;
       break;
     case OPTION_2:
-      bytes_written = write(client_socket, "You chose Option 2.\n", strlen("You chose Option 2.\n"));
-      if (bytes_written == -1)
-      {
-        perror("Error writing to socket");
-      }
+      bytes_written = ntwrk_write(client_socket, "You chose Option 2.\n");
       state = MENU;
       break;
     case EXIT:
-      bytes_written = write(client_socket, "Exiting...\n", strlen("Exiting...\n"));
-      if (bytes_written == -1)
-      {
-        perror("Error writing to socket");
-      }
+      bytes_written = ntwrk_write(client_socket, "Exiting...\n");
       break;
     }
   }
