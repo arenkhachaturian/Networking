@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "DBReader.h"
+#include "Utils.h"
 
 int verify_user(char* username, char* passowrd) {
   char* users_file_name = getenv("USER_DATA_FILE"); // always include stdlib.h
