@@ -6,6 +6,7 @@
 #include "Server.h"
 #include "DBReader.h"
 #include "Utils.h"
+#include "PrimeNumbers.h"
 
 
 #define MAX_CLIENTS 10
@@ -22,7 +23,7 @@ struct Credentials {
 enum MenuOption
 {
   MENU,
-  OPTION_1, // temporary placeholder. real functionality should be implemented later
+  PRIME_CHECKER, // temporary placeholder. real functionality should be implemented later
   OPTION_2,
   EXIT
 };
@@ -31,7 +32,7 @@ int handle_menu(enum MenuOption* choice) {
   switch (*choice)
   {
   case 1:
-    *choice = OPTION_1;
+    *choice = PRIME_CHECKER;
     break;
   case 2:
     *choice = OPTION_2;
@@ -74,15 +75,15 @@ int handle_state(int client_socket)
     switch (state)
     {
     case MENU:
-      bytes_written = ntwrk_write(client_socket, "MENU:\n1. Option 1\n2. Option 2\n3. Exit\nEnter your choice: ");
+      bytes_written = ntwrk_write(client_socket, "MENU:\n1. Is number prime\n2. Option 2\n3. Exit\nEnter your choice: ");
       readChoice(client_socket, &state);
       if (handle_menu(&state) < 0)
       {
         int bytes_written = ntwrk_write(client_socket, "Invalid choice. Please try again.\n");
       }   
       break;
-    case OPTION_1:
-      bytes_written = ntwrk_write(client_socket, "You chose Option 1.\n");
+    case PRIME_CHECKER:
+      handle_prime_checker(client_socket);
       state = MENU;
       break;
     case OPTION_2:
@@ -95,6 +96,40 @@ int handle_state(int client_socket)
     }
   }
 }
+
+
+int handle_prime_checker(int client_socket)
+{
+  int bytes_written = ntwrk_write(client_socket, "Please enter the number to check: ");
+  
+  const int buffer_size = 32;
+  char buffer[buffer_size];
+  int input_number = 0;
+
+  int bytes_read = read(client_socket, buffer, buffer_size);
+  if (bytes_read > 0) {
+    buffer[bytes_read - 1] = '\0';
+    input_number = atoi(buffer);
+  }
+  
+  struct Sieve sv;
+  fillSieve(&sv, input_number);
+  
+  int is_prime_num = is_prime(&sv, input_number);
+
+  char* not_prime = (is_prime_num > 0) ? " " : " not ";
+
+  int n = sprintf(buffer, "Number %d is%sprime\n", input_number, not_prime);
+
+  bytes_written = ntwrk_write(client_socket, buffer);
+
+  //TODO - Create better way of sieve storing/using/handling 
+  free(sv.arr);
+  sv.size = 0;
+
+  return 0;
+}
+
 
 int get_credentials(struct Credentials* creds, int client_socket) {
   char username[USER_NAME_SZ];
